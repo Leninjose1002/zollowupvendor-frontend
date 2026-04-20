@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axiosInstance from "../api/axiosinstance";
 import "./vendorPortal.css";
 
@@ -21,7 +21,7 @@ const VendorPortal = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [vendorData, setVendorData] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("vendorToken"));
+  // const [token, setToken] = useState(localStorage.getItem("vendorToken"));
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -209,7 +209,14 @@ const VendorPortal = () => {
             <button className="btn btn-secondary" disabled={loading}>Google</button>
             <button className="btn btn-secondary" disabled={loading}>Phone</button>
 
-            <p className="form-footer"><a href="#">Forgot password?</a></p>
+            <p className="form-footer">
+  <button 
+    style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+    onClick={() => alert('Password reset coming soon!')}
+  >
+    Forgot password?
+  </button>
+</p>
           </div>
 
           <div className="auth-card featured">
@@ -280,7 +287,15 @@ const VendorPortal = () => {
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <p className="form-footer">By signing up, you agree to our <a href="#">Terms of Service</a></p>
+            <p className="form-footer">
+  By signing up, you agree to our 
+  <button 
+    style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
+    onClick={() => window.open('/terms', '_blank')}
+  >
+    Terms of Service
+  </button>
+</p>
           </div>
         </div>
       </section>
@@ -351,7 +366,13 @@ const VendorPortal = () => {
         {success && <div className="success-message">{success}</div>}
 
         <p className="form-footer">
-          Didn't receive the email? <a href="#" onClick={() => setCurrentPage("landing")}>Back to signup</a>
+          Didn't receive the email? 
+<button 
+  style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
+  onClick={() => setCurrentPage("landing")}
+>
+  Back to signup
+</button>
         </p>
       </div>
     </div>
