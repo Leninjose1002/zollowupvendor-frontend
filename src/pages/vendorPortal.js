@@ -75,7 +75,7 @@ const VendorPortal = () => {
 
       const { token } = response.data;
       localStorage.setItem("vendorToken", token);
-      setToken(token);
+      // setToken(token);
       setSuccess("Login successful! Redirecting to dashboard...");
       setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
 
@@ -138,7 +138,7 @@ const VendorPortal = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("vendorToken");
-    setToken(null);
+    // setToken(null);
     setVendorData(null);
     setCurrentPage("landing");
     setSuccess("Logged out successfully");
