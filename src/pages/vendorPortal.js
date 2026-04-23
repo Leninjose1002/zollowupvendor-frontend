@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosinstance";
 import "./vendorPortal.css";
 
-// const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-
 const VendorPortal = () => {
   const [currentPage, setCurrentPage] = useState("landing");
   const [formData, setFormData] = useState({
@@ -15,49 +13,60 @@ const VendorPortal = () => {
   });
   const [verificationData, setVerificationData] = useState({
     email: "",
+    phone: "",
     token: "",
+    verificationMethod: "", // "email" or "phone"
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [vendorData, setVendorData] = useState(null);
-  // const [token, setToken] = useState(localStorage.getItem("vendorToken"));
- 
-  // ✅ ADD THIS: Check for email verification token in URL on mount
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
-  const email = params.get('email');
+  const [verificationMethod, setVerificationMethod] = useState(null); // "email" or "phone"
+  const [otpResendCountdown, setOtpResendCountdown] = useState(0);
 
-  if (token && email) {
-    setCurrentPage("verify-email-direct");
-    handleDirectEmailVerification(email, token);
-  }
-}, []);
+  // ✅ Check for email verification token in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
 
-// ✅ ADD THIS: Auto-verify email from URL link
-const handleDirectEmailVerification = async (email, token) => {
-  setLoading(true);
-  setError("");
-  setSuccess("");
+    if (token && email) {
+      setCurrentPage("verify-email-direct");
+      handleDirectEmailVerification(email, token);
+    }
+  }, []);
 
-  try {
-    const response = await axiosInstance.post("/employees/verify-email", {
-      email,
-      token,
-    });
+  // ✅ Countdown timer for OTP resend
+  useEffect(() => {
+    if (otpResendCountdown > 0) {
+      const timer = setTimeout(() => setOtpResendCountdown(otpResendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpResendCountdown]);
 
-    setSuccess(response.data.message);
-    setTimeout(() => {
-      setCurrentPage("landing");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }, 2000);
-  } catch (err) {
-    setError(err.response?.data?.msg || "Verification failed. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  // ✅ Auto-verify email from URL link
+  const handleDirectEmailVerification = async (email, token) => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await axiosInstance.post("/employees/verify-email", {
+        email,
+        token,
+      });
+
+      setSuccess(response.data.message);
+      setTimeout(() => {
+        setCurrentPage("landing");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -81,11 +90,94 @@ const handleDirectEmailVerification = async (email, token) => {
       });
 
       setSuccess(response.data.message);
-      setVerificationData({ email: formData.email, token: "" });
-      setCurrentPage("verify");
+      setVerificationData({ email: formData.email, phone: formData.phone, token: "", verificationMethod: "" });
+      setCurrentPage("choose-verification");
       setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Choose verification method
+  const handleChooseVerificationMethod = async (method) => {
+    setVerificationMethod(method);
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      if (method === "email") {
+        // Email verification link is already sent during signup
+        setCurrentPage("verify-email");
+        setSuccess("Verification link has been sent to your email!");
+      } else if (method === "phone") {
+        // Send OTP to phone
+        const response = await axiosInstance.post("/employees/send-phone-otp", {
+          phone: verificationData.phone,
+          email: verificationData.email,
+        });
+        
+        setSuccess(response.data.message);
+        setCurrentPage("verify-phone");
+        setOtpResendCountdown(60); // 60 second countdown
+      }
+    } catch (err) {
+      setError(err.response?.data?.msg || `Failed to send ${method} verification.`);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Verify phone OTP
+  const handleVerifyPhoneOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    if (!verificationData.phone || !verificationData.token) {
+      setError("Phone and OTP are required");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post("/employees/verify-phone-otp", {
+        phone: verificationData.phone,
+        email: verificationData.email,
+        otp: verificationData.token,
+      });
+
+      setSuccess(response.data.message);
+      setTimeout(() => {
+        setCurrentPage("landing");
+        setVerificationData({ email: "", phone: "", token: "", verificationMethod: "" });
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.msg || "OTP verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Resend Phone OTP
+  const handleResendPhoneOtp = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axiosInstance.post("/employees/send-phone-otp", {
+        phone: verificationData.phone,
+        email: verificationData.email,
+      });
+
+      setSuccess("OTP sent successfully!");
+      setOtpResendCountdown(60);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Failed to resend OTP.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +203,6 @@ const handleDirectEmailVerification = async (email, token) => {
 
       const { token } = response.data;
       localStorage.setItem("vendorToken", token);
-      // setToken(token);
       setSuccess("Login successful! Redirecting to dashboard...");
       setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
 
@@ -121,7 +212,7 @@ const handleDirectEmailVerification = async (email, token) => {
       }, 1500);
     } catch (err) {
       if (err.response?.data?.requiresVerification) {
-        setError("Please verify your email first");
+        setError("Please verify your account first");
       } else {
         setError(err.response?.data?.msg || "Login failed. Please try again.");
       }
@@ -151,7 +242,7 @@ const handleDirectEmailVerification = async (email, token) => {
       setSuccess(response.data.message);
       setTimeout(() => {
         setCurrentPage("landing");
-        setVerificationData({ email: "", token: "" });
+        setVerificationData({ email: "", phone: "", token: "", verificationMethod: "" });
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.msg || "Verification failed. Please try again.");
@@ -159,40 +250,6 @@ const handleDirectEmailVerification = async (email, token) => {
       setLoading(false);
     }
   };
-
-  // ✅ ADD THIS: Direct verification page
-const renderDirectVerification = () => (
-  <div className="vendor-portal-container">
-    <div className="verification-container">
-      <h1>Verifying Your Email...</h1>
-      {loading && (
-        <>
-          <p>Please wait while we verify your email...</p>
-          <div className="spinner"></div>
-        </>
-      )}
-      {success && (
-        <>
-          <div className="success-message">{success}</div>
-          <p>Redirecting to login page...</p>
-        </>
-      )}
-      {error && (
-        <>
-          <div className="error-message">{error}</div>
-          <p>
-            <button 
-              style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
-              onClick={() => setCurrentPage("landing")}
-            >
-              Back to signup
-            </button>
-          </p>
-        </>
-      )}
-    </div>
-  </div>
-);
 
   const fetchVendorData = async (authToken) => {
     try {
@@ -208,7 +265,6 @@ const renderDirectVerification = () => (
 
   const handleLogout = () => {
     localStorage.removeItem("vendorToken");
-    // setToken(null);
     setVendorData(null);
     setCurrentPage("landing");
     setSuccess("Logged out successfully");
@@ -223,6 +279,137 @@ const renderDirectVerification = () => (
     const { name, value } = e.target;
     setVerificationData((prev) => ({ ...prev, [name]: value }));
   };
+
+  // ✅ NEW: Choose verification method page
+  const renderChooseVerification = () => (
+    <div className="vendor-portal-container">
+      <div className="verification-container">
+        <h1>Choose Verification Method</h1>
+        <p>How would you like to verify your account?</p>
+
+        <div className="verification-options">
+          <button
+            className="verification-option-card"
+            onClick={() => handleChooseVerificationMethod("email")}
+            disabled={loading}
+          >
+            <div className="option-icon">📧</div>
+            <h3>Email Verification</h3>
+            <p>Receive a verification link on your email</p>
+          </button>
+
+          <button
+            className="verification-option-card"
+            onClick={() => handleChooseVerificationMethod("phone")}
+            disabled={loading}
+          >
+            <div className="option-icon">📱</div>
+            <h3>Phone Verification</h3>
+            <p>Receive an OTP code on your phone</p>
+          </button>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+      </div>
+    </div>
+  );
+
+  // ✅ NEW: Phone OTP verification page
+  const renderPhoneVerification = () => (
+    <div className="vendor-portal-container">
+      <div className="verification-container">
+        <h1>Verify Your Phone</h1>
+        <p>We've sent an OTP to <strong>{verificationData.phone}</strong></p>
+        <p>Enter the 6-digit code you received:</p>
+
+        <form onSubmit={handleVerifyPhoneOtp}>
+          <div className="form-group">
+            <label>OTP Code</label>
+            <input
+              type="text"
+              name="token"
+              placeholder="Enter 6-digit OTP"
+              value={verificationData.token}
+              onChange={handleVerificationChange}
+              maxLength="6"
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-success" disabled={loading}>
+            {loading ? "Verifying..." : "Verify Phone"}
+          </button>
+        </form>
+
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+
+        <p className="form-footer">
+          Didn't receive the code?
+          <button
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#007bff',
+              cursor: otpResendCountdown > 0 ? 'not-allowed' : 'pointer',
+              textDecoration: 'underline',
+              marginLeft: '4px',
+              opacity: otpResendCountdown > 0 ? 0.5 : 1,
+            }}
+            onClick={handleResendPhoneOtp}
+            disabled={otpResendCountdown > 0 || loading}
+          >
+            {otpResendCountdown > 0 ? `Resend in ${otpResendCountdown}s` : 'Resend OTP'}
+          </button>
+        </p>
+
+        <p className="form-footer">
+          <button
+            style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+            onClick={() => {
+              setCurrentPage("choose-verification");
+              setVerificationData({ ...verificationData, token: "" });
+            }}
+          >
+            Change verification method
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderDirectVerification = () => (
+    <div className="vendor-portal-container">
+      <div className="verification-container">
+        <h1>Verifying Your Email...</h1>
+        {loading && (
+          <>
+            <p>Please wait while we verify your email...</p>
+            <div className="spinner"></div>
+          </>
+        )}
+        {success && (
+          <>
+            <div className="success-message">{success}</div>
+            <p>Redirecting to login page...</p>
+          </>
+        )}
+        {error && (
+          <>
+            <div className="error-message">{error}</div>
+            <p>
+              <button
+                style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+                onClick={() => setCurrentPage("landing")}
+              >
+                Back to signup
+              </button>
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
 
   const renderLanding = () => (
     <div className="vendor-portal-container">
@@ -243,7 +430,7 @@ const renderDirectVerification = () => (
           <div className="auth-card">
             <h2>Vendor Login</h2>
             <p className="auth-subtitle">Existing vendors sign in to access your dashboard.</p>
-            
+
             <form onSubmit={handleLogin}>
               <div className="form-group">
                 <label>Email</label>
@@ -280,13 +467,13 @@ const renderDirectVerification = () => (
             <button className="btn btn-secondary" disabled={loading}>Phone</button>
 
             <p className="form-footer">
-  <button 
-    style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
-    onClick={() => alert('Password reset coming soon!')}
-  >
-    Forgot password?
-  </button>
-</p>
+              <button
+                style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+                onClick={() => alert('Password reset coming soon!')}
+              >
+                Forgot password?
+              </button>
+            </p>
           </div>
 
           <div className="auth-card featured">
@@ -358,14 +545,14 @@ const renderDirectVerification = () => (
             {success && <div className="success-message">{success}</div>}
 
             <p className="form-footer">
-  By signing up, you agree to our 
-  <button 
-    style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
-    onClick={() => window.open('/terms', '_blank')}
-  >
-    Terms of Service
-  </button>
-</p>
+              By signing up, you agree to our
+              <button
+                style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
+                onClick={() => window.open('/terms', '_blank')}
+              >
+                Terms of Service
+              </button>
+            </p>
           </div>
         </div>
       </section>
@@ -436,13 +623,13 @@ const renderDirectVerification = () => (
         {success && <div className="success-message">{success}</div>}
 
         <p className="form-footer">
-          Didn't receive the email? 
-<button 
-  style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
-  onClick={() => setCurrentPage("landing")}
->
-  Back to signup
-</button>
+          Didn't receive the email?
+          <button
+            style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', marginLeft: '4px'}}
+            onClick={() => setCurrentPage("choose-verification")}
+          >
+            Try phone verification instead
+          </button>
         </p>
       </div>
     </div>
@@ -520,8 +707,10 @@ const renderDirectVerification = () => (
   return (
     <div className="vendor-portal">
       {currentPage === "landing" && renderLanding()}
-      {currentPage === "verify" && renderVerification()}
-      {currentPage === "verify-email-direct" && renderDirectVerification()} 
+      {currentPage === "choose-verification" && renderChooseVerification()}
+      {currentPage === "verify-email" && renderVerification()}
+      {currentPage === "verify-phone" && renderPhoneVerification()}
+      {currentPage === "verify-email-direct" && renderDirectVerification()}
       {currentPage === "dashboard" && renderDashboard()}
     </div>
   );
