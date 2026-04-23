@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosinstance";
 import "./vendorPortal.css";
 
@@ -22,6 +22,42 @@ const VendorPortal = () => {
   const [success, setSuccess] = useState("");
   const [vendorData, setVendorData] = useState(null);
   // const [token, setToken] = useState(localStorage.getItem("vendorToken"));
+ 
+  // ✅ ADD THIS: Check for email verification token in URL on mount
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const email = params.get('email');
+
+  if (token && email) {
+    setCurrentPage("verify-email-direct");
+    handleDirectEmailVerification(email, token);
+  }
+}, []);
+
+// ✅ ADD THIS: Auto-verify email from URL link
+const handleDirectEmailVerification = async (email, token) => {
+  setLoading(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    const response = await axiosInstance.post("/employees/verify-email", {
+      email,
+      token,
+    });
+
+    setSuccess(response.data.message);
+    setTimeout(() => {
+      setCurrentPage("landing");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 2000);
+  } catch (err) {
+    setError(err.response?.data?.msg || "Verification failed. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -123,6 +159,40 @@ const VendorPortal = () => {
       setLoading(false);
     }
   };
+
+  // ✅ ADD THIS: Direct verification page
+const renderDirectVerification = () => (
+  <div className="vendor-portal-container">
+    <div className="verification-container">
+      <h1>Verifying Your Email...</h1>
+      {loading && (
+        <>
+          <p>Please wait while we verify your email...</p>
+          <div className="spinner"></div>
+        </>
+      )}
+      {success && (
+        <>
+          <div className="success-message">{success}</div>
+          <p>Redirecting to login page...</p>
+        </>
+      )}
+      {error && (
+        <>
+          <div className="error-message">{error}</div>
+          <p>
+            <button 
+              style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+              onClick={() => setCurrentPage("landing")}
+            >
+              Back to signup
+            </button>
+          </p>
+        </>
+      )}
+    </div>
+  </div>
+);
 
   const fetchVendorData = async (authToken) => {
     try {
@@ -451,6 +521,7 @@ const VendorPortal = () => {
     <div className="vendor-portal">
       {currentPage === "landing" && renderLanding()}
       {currentPage === "verify" && renderVerification()}
+      {currentPage === "verify-email-direct" && renderDirectVerification()} 
       {currentPage === "dashboard" && renderDashboard()}
     </div>
   );
