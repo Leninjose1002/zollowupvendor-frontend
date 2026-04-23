@@ -196,7 +196,7 @@ const renderDirectVerification = () => (
 
   const fetchVendorData = async (authToken) => {
     try {
-      const response = await axiosInstance.get("/vendor/dashboard", {
+      const response = await axiosInstance.get("/employees/dashboard", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setVendorData(response.data);
