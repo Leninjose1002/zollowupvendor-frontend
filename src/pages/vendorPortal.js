@@ -21,7 +21,7 @@ const VendorPortal = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [vendorData, setVendorData] = useState(null);
-  const [verificationMethod, setVerificationMethod] = useState(null); // "email" or "phone"
+  // const [verificationMethod, setVerificationMethod] = useState(null); // "email" or "phone"
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
 
   // ✅ Check for email verification token in URL on mount
@@ -102,7 +102,7 @@ const VendorPortal = () => {
 
   // ✅ NEW: Choose verification method
   const handleChooseVerificationMethod = async (method) => {
-    setVerificationMethod(method);
+    // setVerificationMethod(method);
     setLoading(true);
     setError("");
     setSuccess("");
@@ -174,7 +174,7 @@ const VendorPortal = () => {
         email: verificationData.email,
       });
 
-      setSuccess("OTP sent successfully!");
+      setSuccess(response.data.message); 
       setOtpResendCountdown(60);
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to resend OTP.");
