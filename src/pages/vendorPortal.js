@@ -58,7 +58,9 @@ const VendorPortal = () => {
 
       setSuccess(response.data.message);
       setTimeout(() => {
-        setCurrentPage("landing");
+        setCurrentPage("choose-verification");
+        setVerificationData({ email, phone: "", token: "", verificationMethod: "" });
+        // setCurrentPage("landing");
         window.history.replaceState({}, document.title, window.location.pathname);
       }, 2000);
     } catch (err) {
