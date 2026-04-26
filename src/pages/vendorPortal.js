@@ -21,20 +21,29 @@ const VendorPortal = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [vendorData, setVendorData] = useState(null);
+  const [resetPasswordData, setResetPasswordData] = useState({
+  newPassword: "",
+  confirmPassword: "",
+});
   // const [verificationMethod, setVerificationMethod] = useState(null); // "email" or "phone"
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
 
   // ✅ Check for email verification token in URL on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const email = params.get('email');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const email = params.get('email');
+  const page = params.get('page');
 
-    if (token && email) {
-      setCurrentPage("verify-email-direct");
-      handleDirectEmailVerification(email, token);
-    }
-  }, []);
+  if (token && email && page === 'reset-password') {
+    // Reset password link - go to reset page
+    setCurrentPage("reset-password");
+  } else if (token && email && page !== 'reset-password') {
+    // Email verification link - auto-verify
+    setCurrentPage("verify-email-direct");
+    handleDirectEmailVerification(email, token);
+  }
+}, []);
 
   // ✅ Countdown timer for OTP resend
   useEffect(() => {
@@ -469,13 +478,13 @@ const VendorPortal = () => {
             <button className="btn btn-secondary" disabled={loading}>Phone</button>
 
             <p className="form-footer">
-              <button
-                style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
-                onClick={() => alert('Password reset coming soon!')}
-              >
-                Forgot password?
-              </button>
-            </p>
+  <button
+    style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+    onClick={() => setCurrentPage("forgot-password")}
+  >
+    Forgot password?
+  </button>
+</p>
           </div>
 
           <div className="auth-card featured">
@@ -705,15 +714,164 @@ const VendorPortal = () => {
       )}
     </div>
   );
+  
+  const renderForgotPassword = () => (
+  <div className="vendor-portal-container">
+    <div className="verification-container">
+      <h1>Reset Your Password</h1>
+      <p>Enter your email to receive a password reset link.</p>
 
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        try {
+          const response = await axiosInstance.post("/employees/forgot-password", { 
+            email: formData.email 
+          });
+          setSuccess(response.data.message);
+          setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
+          setTimeout(() => setCurrentPage("landing"), 3000);
+        } catch (err) {
+          setError(err.response?.data?.msg || "Failed to send reset link");
+        } finally {
+          setLoading(false);
+        }
+      }}>
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? "Sending..." : "Send Reset Link"}
+        </button>
+      </form>
+
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+
+      <p className="form-footer">
+        <button
+          style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+          onClick={() => setCurrentPage("landing")}
+        >
+          Back to Login
+        </button>
+      </p>
+    </div>
+  </div>
+);
+
+const renderResetPassword = () => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const email = params.get('email');
+
+  if (!token || !email) {
+    return (
+      <div className="vendor-portal-container">
+        <div className="verification-container">
+          <div className="error-message">Invalid or missing reset link</div>
+          <p className="form-footer">
+            <button
+              style={{background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline'}}
+              onClick={() => setCurrentPage("landing")}
+            >
+              Back to Login
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="vendor-portal-container">
+      <div className="verification-container">
+        <h1>Reset Password</h1>
+
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          setError("");
+          setSuccess("");
+
+          if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(false);
+            return;
+          }
+
+          try {
+            const response = await axiosInstance.post("/employees/reset-password", {
+              token,
+              email,
+              newPassword: resetPasswordData.newPassword,
+              confirmPassword: resetPasswordData.confirmPassword,
+            });
+            setSuccess(response.data.message);
+            setTimeout(() => setCurrentPage("landing"), 2000);
+          } catch (err) {
+            setError(err.response?.data?.msg || "Failed to reset password");
+          } finally {
+            setLoading(false);
+          }
+        }}>
+          <div className="form-group">
+            <label>New Password</label>
+            <input
+              type="password"
+              placeholder="Enter new password"
+              value={resetPasswordData.newPassword}
+onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+              required
+              minLength="6"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={resetPasswordData.confirmPassword}
+onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+              required
+              minLength="6"
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Resetting..." : "Reset Password"}
+          </button>
+        </form>
+
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+      </div>
+    </div>
+  );
+};
   return (
     <div className="vendor-portal">
       {currentPage === "landing" && renderLanding()}
-      {currentPage === "choose-verification" && renderChooseVerification()}
-      {currentPage === "verify-email" && renderVerification()}
-      {currentPage === "verify-phone" && renderPhoneVerification()}
-      {currentPage === "verify-email-direct" && renderDirectVerification()}
-      {currentPage === "dashboard" && renderDashboard()}
+    {currentPage === "choose-verification" && renderChooseVerification()}
+    {currentPage === "verify-email" && renderVerification()}
+    {currentPage === "verify-phone" && renderPhoneVerification()}
+    {currentPage === "verify-email-direct" && renderDirectVerification()}
+    {currentPage === "dashboard" && renderDashboard()}
+    {currentPage === "forgot-password" && renderForgotPassword()}
+    {currentPage === "reset-password" && renderResetPassword()}
     </div>
   );
 };
