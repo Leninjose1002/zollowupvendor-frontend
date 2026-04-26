@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosinstance";
 import "./vendorPortal.css";
+import VendorKYCForm from "../components/vendorKYCForm";
 
 const VendorPortal = () => {
   const [currentPage, setCurrentPage] = useState("landing");
@@ -647,6 +648,7 @@ const VendorPortal = () => {
   );
 
   const renderDashboard = () => (
+    
     <div className="vendor-dashboard">
       <header className="dashboard-header">
         <div className="dashboard-logo">Zollowup Vendor Dashboard</div>
@@ -659,7 +661,23 @@ const VendorPortal = () => {
           )}
         </div>
       </header>
-
+       
+       
+    <nav className="dashboard-nav">
+      <button 
+        className="nav-btn" 
+        onClick={() => setCurrentPage("dashboard")}
+      >
+        Dashboard
+      </button>
+      <button 
+        className="nav-btn" 
+        onClick={() => setCurrentPage("kyc")}
+      >
+        KYC Verification
+      </button>
+    </nav>
+   
       {vendorData && (
         <div className="dashboard-content">
           <section className="dashboard-stats">
@@ -862,6 +880,53 @@ onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e
     </div>
   );
 };
+
+const renderKYC = () => {
+  console.log('vendorData:', vendorData);
+  console.log('vendorId:', vendorData?.vendor?.id);
+
+  return (
+  <div className="vendor-dashboard">
+    <header className="dashboard-header">
+      <div className="dashboard-logo">Zollowup Vendor Dashboard</div>
+      <div className="vendor-profile">
+        {vendorData && (
+          <>
+            <span>{vendorData.vendor.businessName}</span>
+            <button className="btn btn-secondary" onClick={handleLogout}>Logout</button>
+          </>
+        )}
+      </div>
+    </header>
+
+    <nav className="dashboard-nav">
+      <button 
+        className="nav-btn" 
+        onClick={() => setCurrentPage("dashboard")}
+      >
+        Dashboard
+      </button>
+      <button 
+        className="nav-btn active" 
+        onClick={() => setCurrentPage("kyc")}
+      >
+        KYC Verification
+      </button>
+    </nav>
+
+    <div className="dashboard-content">
+      <VendorKYCForm 
+        vendorId={vendorData?.vendor?.id} 
+        onSuccess={() => {
+          alert("KYC submitted! Admin will review and approve soon.");
+          setCurrentPage("dashboard");
+        }}
+      />
+    </div>
+  </div>
+  )
+      };
+
   return (
     <div className="vendor-portal">
       {currentPage === "landing" && renderLanding()}
@@ -872,6 +937,7 @@ onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e
     {currentPage === "dashboard" && renderDashboard()}
     {currentPage === "forgot-password" && renderForgotPassword()}
     {currentPage === "reset-password" && renderResetPassword()}
+     {currentPage === "kyc" && renderKYC()}
     </div>
   );
 };
