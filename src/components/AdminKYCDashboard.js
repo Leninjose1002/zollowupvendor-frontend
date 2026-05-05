@@ -117,7 +117,7 @@ const AdminKYCDashboard = () => {
 
 <div className="doc-item">
   <strong>Police Certificate:</strong>
-  <a href={`http://localhost:5000${selectedKYC.policeVerification.filepath}`} target="_blank">
+  <a href={`http://localhost:5000${selectedKYC.policeVerification.filepath}`} target="_blank" rel="noreferrer">
     View Certificate
   </a>
 </div>
