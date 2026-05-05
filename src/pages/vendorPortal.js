@@ -11,6 +11,9 @@ const VendorPortal = () => {
     businessName: "",
     name: "",
     phone: "",
+    sourcing_person_name: "",      // 🆕 NEW
+    skill_category: "",             // 🆕 NEW
+    diet_type: "",                  // 🆕 NEW
   });
   const [verificationData, setVerificationData] = useState({
     email: "",
@@ -86,11 +89,18 @@ const VendorPortal = () => {
     setError("");
     setSuccess("");
 
-    if (!formData.email || !formData.password || !formData.businessName || !formData.phone) {
+    if (!formData.email || !formData.password || !formData.businessName || !formData.phone || !formData.skill_category) {
       setError("All fields are required");
       setLoading(false);
       return;
     }
+    
+    // 🆕 Validate diet_type for Cook/Chef
+  if (formData.skill_category === 'Cook/Chef' && !formData.diet_type) {
+    setError("Diet type is required for chefs");
+    setLoading(false);
+    return;
+  }
 
     try {
       const response = await axiosInstance.post("/employees/register", {
@@ -99,12 +109,17 @@ const VendorPortal = () => {
         businessName: formData.businessName,
         name: formData.name || formData.businessName,
         phone: formData.phone,
+         sourcing_person_name: formData.sourcing_person_name,  // 🆕 NEW
+      skill_category: formData.skill_category,              // 🆕 NEW
+      diet_type: formData.diet_type,                        // 🆕 NEW
       });
 
       setSuccess(response.data.message);
       setVerificationData({ email: formData.email, phone: formData.phone, token: "", verificationMethod: "" });
       setCurrentPage("choose-verification");
-      setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
+      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
+  skill_category: "",         // 🆕 Add this
+  diet_type: ""  });
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
     } finally {
@@ -216,7 +231,9 @@ const VendorPortal = () => {
       const { token } = response.data;
       localStorage.setItem("vendorToken", token);
       setSuccess("Login successful! Redirecting to dashboard...");
-      setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
+      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
+  skill_category: "",         // 🆕 Add this
+  diet_type: ""   });
 
       setTimeout(() => {
         setCurrentPage("dashboard");
@@ -495,7 +512,7 @@ const VendorPortal = () => {
 
             <form onSubmit={handleSignup}>
               <div className="form-group">
-                <label>Business Name</label>
+                <label>Business Name (Optional)</label>
                 <input
                   type="text"
                   name="businessName"
@@ -515,6 +532,77 @@ const VendorPortal = () => {
                   onChange={handleInputChange}
                 />
               </div>
+
+              {/* 🆕 NEW FIELD: Skill Category */}
+  <div className="form-group">
+    <label>Skill Category *</label>
+    <select
+      name="skill_category"
+      value={formData.skill_category}
+      onChange={handleInputChange}
+      required
+      style={{
+        width: '100%',
+        padding: '0.75rem',
+        border: '1px solid #e1e8ed',
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: '#ffffff',
+        cursor: 'pointer',
+      }}
+    >
+      <option value="">Select your skill</option>
+      <option value="Labor">Labor</option>
+      <option value="Beautician">Beautician</option>
+      <option value="Tailor">Tailor</option>
+      <option value="Mason">Mason</option>
+      <option value="Maid">Maid</option>
+      <option value="Cook/Chef">Cook/Chef</option>
+      <option value="Plumber">Plumber</option>
+      <option value="Electrician">Electrician</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+
+  {/* 🆕 NEW FIELD: Diet Type (Only for Chef) */}
+  {formData.skill_category === 'Cook/Chef' && (
+    <div className="form-group">
+      <label>Diet Specialization *</label>
+      <select
+        name="diet_type"
+        value={formData.diet_type}
+        onChange={handleInputChange}
+        required
+        style={{
+          width: '100%',
+          padding: '0.75rem',
+          border: '1px solid #e1e8ed',
+          borderRadius: '8px',
+          fontSize: '14px',
+          backgroundColor: '#ffffff',
+          cursor: 'pointer',
+        }}
+      >
+        <option value="">Select diet type</option>
+        <option value="Vegetarian">Vegetarian</option>
+        <option value="Non-Vegetarian">Non-Vegetarian</option>
+        <option value="Both">Both</option>
+      </select>
+    </div>
+  )}
+
+  {/* 🆕 NEW FIELD: Sourcing Person Name */}
+  <div className="form-group">
+    <label>Sourcing Person Name </label>
+    <input
+      type="text"
+      name="sourcing_person_name"
+      placeholder="Name of the person who referred you"
+      value={formData.sourcing_person_name}
+      onChange={handleInputChange}
+    />
+  </div>
+
               <div className="form-group">
                 <label>Email</label>
                 <input
@@ -750,7 +838,9 @@ const VendorPortal = () => {
             email: formData.email 
           });
           setSuccess(response.data.message);
-          setFormData({ email: "", password: "", businessName: "", name: "", phone: "" });
+          setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
+  skill_category: "",         // 🆕 Add this
+  diet_type: ""   });
           setTimeout(() => setCurrentPage("landing"), 3000);
         } catch (err) {
           setError(err.response?.data?.msg || "Failed to send reset link");

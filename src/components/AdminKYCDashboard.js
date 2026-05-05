@@ -1,6 +1,6 @@
 // components/AdminKYCDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosinstance';
 import './AdminKYCDashboard.css';
 
 const AdminKYCDashboard = () => {
@@ -16,7 +16,7 @@ const AdminKYCDashboard = () => {
 
   const fetchPendingKYC = async () => {
     try {
-      const response = await axios.get('/api/admin/kyc/pending');
+      const response = await axiosInstance.get('/admin/kyc/pending');
       setPendingKYC(response.data);
       setLoading(false);
     } catch (err) {
@@ -28,7 +28,7 @@ const AdminKYCDashboard = () => {
   const handleApprove = async (kycId) => {
     setActionLoading(true); 
     try {
-      await axios.post(`/api/admin/kyc/verify/${kycId}`, {
+      await axiosInstance.post(`/admin/kyc/verify/${kycId}`, {
         admin_id: localStorage.getItem('admin_id'),
         action: 'approve'
       });
@@ -47,8 +47,9 @@ const AdminKYCDashboard = () => {
       alert('Please provide rejection reason');
       return;
     }
+    setActionLoading(true);
     try {
-      await axios.post(`/api/admin/kyc/verify/${kycId}`, {
+      await axiosInstance.post(`/admin/kyc/verify/${kycId}`, {
         admin_id: localStorage.getItem('admin_id'),
         action: 'reject',
         rejection_reason: rejectionReason
@@ -59,6 +60,8 @@ const AdminKYCDashboard = () => {
       setRejectionReason('');
     } catch (err) {
       alert('Error rejecting KYC: ' + err.message);
+    } finally {
+    setActionLoading(false); 
     }
   };
 
@@ -101,21 +104,23 @@ const AdminKYCDashboard = () => {
             <h4>Documents</h4>
             <div className="document-list">
               <div className="doc-item">
-                <strong>Aadhar Document:</strong>
-                <a href={selectedKYC.aadhar.document.filepath} target="_blank" rel="noopener noreferrer">
-                  View Document
-                </a>
-              </div>
-              <div className="doc-item">
-                <strong>Selfie:</strong>
-                <img src={selectedKYC.selfie.filepath} alt="Selfie" className="doc-preview" />
-              </div>
-              <div className="doc-item">
-                <strong>Police Certificate:</strong>
-                <a href={selectedKYC.policeVerification.filepath} target="_blank" rel="noopener noreferrer">
-                  View Certificate
-                </a>
-              </div>
+  <strong>Aadhar Document:</strong>
+  <a href={`http://localhost:5000${selectedKYC.aadhar.document.filepath}`} target="_blank">
+    View Document
+  </a>
+</div>
+
+<div className="doc-item">
+  <strong>Selfie:</strong>
+  <img src={`http://localhost:5000${selectedKYC.selfie.filepath}`} alt="Selfie" />
+</div>
+
+<div className="doc-item">
+  <strong>Police Certificate:</strong>
+  <a href={`http://localhost:5000${selectedKYC.policeVerification.filepath}`} target="_blank">
+    View Certificate
+  </a>
+</div>
             </div>
           </div>
 
@@ -131,8 +136,9 @@ const AdminKYCDashboard = () => {
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
               />
-              <button className="btn btn-reject" onClick={() => handleReject(selectedKYC._id)}>
-                ✗ Reject
+              <button className="btn btn-reject" onClick={() => handleReject(selectedKYC._id)}
+                disabled={actionLoading}>
+                {actionLoading ? 'Processing...' : '✗ Reject'}
               </button>
             </div>
           </div>
