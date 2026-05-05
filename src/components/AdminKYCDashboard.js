@@ -105,7 +105,7 @@ const AdminKYCDashboard = () => {
             <div className="document-list">
               <div className="doc-item">
   <strong>Aadhar Document:</strong>
-  <a href={`http://localhost:5000${selectedKYC.aadhar.document.filepath}`} target="_blank">
+  <a href={`http://localhost:5000${selectedKYC.aadhar.document.filepath}`} target="_blank" rel="noreferrer">
     View Document
   </a>
 </div>
