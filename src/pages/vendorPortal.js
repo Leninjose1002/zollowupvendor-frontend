@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosinstance";
 import "./vendorPortal.css";
 import VendorKYCForm from "../components/vendorKYCForm";
+import CreateBooking from "../components/CreateBooking";
+import BookingsDashboard from "../components/BookingDashboard";
 
 const VendorPortal = () => {
   const [currentPage, setCurrentPage] = useState("landing");
@@ -752,19 +754,31 @@ const VendorPortal = () => {
        
        
     <nav className="dashboard-nav">
-      <button 
-        className="nav-btn" 
-        onClick={() => setCurrentPage("dashboard")}
-      >
-        Dashboard
-      </button>
-      <button 
-        className="nav-btn" 
-        onClick={() => setCurrentPage("kyc")}
-      >
-        KYC Verification
-      </button>
-    </nav>
+  <button 
+    className={`nav-btn ${currentPage === "dashboard" ? "active" : ""}`}
+    onClick={() => setCurrentPage("dashboard")}
+  >
+    Dashboard
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "bookings" ? "active" : ""}`}
+    onClick={() => setCurrentPage("bookings")}
+  >
+    📅 Bookings
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "create-booking" ? "active" : ""}`}
+    onClick={() => setCurrentPage("create-booking")}
+  >
+    ➕ New Booking
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "kyc" ? "active" : ""}`}
+    onClick={() => setCurrentPage("kyc")}
+  >
+    KYC Verification
+  </button>
+</nav>
    
       {vendorData && (
         <div className="dashboard-content">
@@ -989,20 +1003,32 @@ const renderKYC = () => {
       </div>
     </header>
 
-    <nav className="dashboard-nav">
-      <button 
-        className="nav-btn" 
-        onClick={() => setCurrentPage("dashboard")}
-      >
-        Dashboard
-      </button>
-      <button 
-        className="nav-btn active" 
-        onClick={() => setCurrentPage("kyc")}
-      >
-        KYC Verification
-      </button>
-    </nav>
+<nav className="dashboard-nav">
+  <button 
+    className={`nav-btn ${currentPage === "dashboard" ? "active" : ""}`}
+    onClick={() => setCurrentPage("dashboard")}
+  >
+    Dashboard
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "bookings" ? "active" : ""}`}
+    onClick={() => setCurrentPage("bookings")}
+  >
+    📅 Bookings
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "create-booking" ? "active" : ""}`}
+    onClick={() => setCurrentPage("create-booking")}
+  >
+    ➕ New Booking
+  </button>
+  <button 
+    className={`nav-btn ${currentPage === "kyc" ? "active" : ""}`}
+    onClick={() => setCurrentPage("kyc")}
+  >
+    KYC Verification
+  </button>
+</nav>
 
     <div className="dashboard-content">
       <VendorKYCForm 
@@ -1017,19 +1043,122 @@ const renderKYC = () => {
   )
       };
 
+      // ✅ Render Bookings Dashboard
+const renderBookingsDashboard = () => (
+  <div className="vendor-dashboard">
+    <header className="dashboard-header">
+      <div className="dashboard-logo">Zollowup Vendor Dashboard</div>
+      <div className="vendor-profile">
+        {vendorData && (
+          <>
+            <span>{vendorData.vendor.businessName}</span>
+            <button className="btn btn-secondary" onClick={handleLogout}>Logout</button>
+          </>
+        )}
+      </div>
+    </header>
+
+    <nav className="dashboard-nav">
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("dashboard")}
+      >
+        Dashboard
+      </button>
+      <button 
+        className={`nav-btn active`}
+        onClick={() => setCurrentPage("bookings")}
+      >
+        📅 Bookings
+      </button>
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("create-booking")}
+      >
+        ➕ New Booking
+      </button>
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("kyc")}
+      >
+        KYC Verification
+      </button>
+    </nav>
+
+    <div className="dashboard-content">
+      <BookingsDashboard />
+    </div>
+  </div>
+);
+
+// ✅ Render Create Booking Form
+const renderCreateBooking = () => (
+  <div className="vendor-dashboard">
+    <header className="dashboard-header">
+      <div className="dashboard-logo">Zollowup Vendor Dashboard</div>
+      <div className="vendor-profile">
+        {vendorData && (
+          <>
+            <span>{vendorData.vendor.businessName}</span>
+            <button className="btn btn-secondary" onClick={handleLogout}>Logout</button>
+          </>
+        )}
+      </div>
+    </header>
+
+    <nav className="dashboard-nav">
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("dashboard")}
+      >
+        Dashboard
+      </button>
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("bookings")}
+      >
+        📅 Bookings
+      </button>
+      <button 
+        className={`nav-btn active`}
+        onClick={() => setCurrentPage("create-booking")}
+      >
+        ➕ New Booking
+      </button>
+      <button 
+        className="nav-btn"
+        onClick={() => setCurrentPage("kyc")}
+      >
+        KYC Verification
+      </button>
+    </nav>
+
+    <div className="dashboard-content">
+      <CreateBooking 
+        onBookingCreated={() => {
+          alert("✅ Booking created successfully!");
+          setCurrentPage("bookings");
+        }}
+      />
+    </div>
+  </div>
+);
+
   return (
-    <div className="vendor-portal">
-      {currentPage === "landing" && renderLanding()}
+  <div className="vendor-portal">
+    {currentPage === "landing" && renderLanding()}
     {currentPage === "choose-verification" && renderChooseVerification()}
     {currentPage === "verify-email" && renderVerification()}
     {currentPage === "verify-phone" && renderPhoneVerification()}
     {currentPage === "verify-email-direct" && renderDirectVerification()}
     {currentPage === "dashboard" && renderDashboard()}
+    {currentPage === "bookings" && renderBookingsDashboard()}
+    {currentPage === "create-booking" && renderCreateBooking()}
     {currentPage === "forgot-password" && renderForgotPassword()}
     {currentPage === "reset-password" && renderResetPassword()}
-     {currentPage === "kyc" && renderKYC()}
-    </div>
-  );
+    {currentPage === "kyc" && renderKYC()}
+  </div>
+);
 };
 
 export default VendorPortal;
