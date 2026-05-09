@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchAllBookings, updateBookingStatus } from "../api/BookingAPI";
 import "./BookingDashboard.css";
-import { getSampleBookingsData } from "../utils/BookingSampleData";
+// import { getSampleBookingsData } from "../utils/BookingSampleData";
 
 const BookingsDashboard = () => {
   const [bookings, setBookings] = useState([]);
@@ -19,14 +19,14 @@ const BookingsDashboard = () => {
     try {
       setLoading(true);
 
-      // Use sample data in development, real API in production
-    let data;
-    if (process.env.NODE_ENV === "development") {
-      data = getSampleBookingsData(); // 🧪 Test data
-    } else {
-      data = await fetchAllBookings(); // 🚀 Production API
-    }
-      // const data = await fetchAllBookings();
+    //   // Use sample data in development, real API in production
+    // let data;
+    // if (process.env.NODE_ENV === "development") {
+    //   data = getSampleBookingsData(); // 🧪 Test data
+    // } else {
+    //   data = await fetchAllBookings(); // 🚀 Production API
+    // }
+      const data = await fetchAllBookings();
       setBookings(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
