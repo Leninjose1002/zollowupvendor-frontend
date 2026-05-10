@@ -51,6 +51,16 @@ const VendorPortal = () => {
   }
 }, []);
 
+// ✅ NEW: Check for saved token on page load/refresh
+  useEffect(() => {
+    const savedToken = localStorage.getItem("vendorToken");
+    
+    if (savedToken) {
+      setCurrentPage("dashboard");
+      fetchVendorData(savedToken);
+    }
+  }, []);
+
   // ✅ Countdown timer for OTP resend
   useEffect(() => {
     if (otpResendCountdown > 0) {
@@ -66,7 +76,7 @@ const VendorPortal = () => {
     setSuccess("");
 
     try {
-      const response = await axiosInstance.post("/employees/verify-email", {
+      const response = await axiosInstance.post("/api/employees/verify-email", {
         email,
         token,
       });
@@ -105,7 +115,7 @@ const VendorPortal = () => {
   }
 
     try {
-      const response = await axiosInstance.post("/employees/register", {
+      const response = await axiosInstance.post("/api/employees/register", {
         email: formData.email,
         password: formData.password,
         businessName: formData.businessName,
@@ -143,7 +153,7 @@ const VendorPortal = () => {
         setSuccess("Verification link has been sent to your email!");
       } else if (method === "phone") {
         // Send OTP to phone
-        const response = await axiosInstance.post("/employees/send-phone-otp", {
+        const response = await axiosInstance.post("/api/employees/send-phone-otp", {
           phone: verificationData.phone,
           email: verificationData.email,
         });
@@ -174,7 +184,7 @@ const VendorPortal = () => {
     }
 
     try {
-      const response = await axiosInstance.post("/employees/verify-phone-otp", {
+      const response = await axiosInstance.post("/api/employees/verify-phone-otp", {
         phone: verificationData.phone,
         email: verificationData.email,
         otp: verificationData.token,
@@ -198,7 +208,7 @@ const VendorPortal = () => {
     setError("");
 
     try {
-      const response = await axiosInstance.post("/employees/send-phone-otp", {
+      const response = await axiosInstance.post("/api/employees/send-phone-otp", {
         phone: verificationData.phone,
         email: verificationData.email,
       });
@@ -225,7 +235,7 @@ const VendorPortal = () => {
     }
 
     try {
-      const response = await axiosInstance.post("/employees/login", {
+      const response = await axiosInstance.post("/api/employees/login", {
         email: formData.email,
         password: formData.password,
       });
@@ -265,7 +275,7 @@ const VendorPortal = () => {
     }
 
     try {
-      const response = await axiosInstance.post("/employees/verify-email", {
+      const response = await axiosInstance.post("/api/employees/verify-email", {
         email: verificationData.email,
         token: verificationData.token,
       });
@@ -284,7 +294,7 @@ const VendorPortal = () => {
 
   const fetchVendorData = async (authToken) => {
     try {
-      const response = await axiosInstance.get("/employees/dashboard", {
+      const response = await axiosInstance.get("/api/employees/dashboard", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setVendorData(response.data);
@@ -848,7 +858,7 @@ const VendorPortal = () => {
         setSuccess("");
 
         try {
-          const response = await axiosInstance.post("/employees/forgot-password", { 
+          const response = await axiosInstance.post("/api/employees/forgot-password", { 
             email: formData.email 
           });
           setSuccess(response.data.message);
@@ -935,7 +945,7 @@ const renderResetPassword = () => {
           }
 
           try {
-            const response = await axiosInstance.post("/employees/reset-password", {
+            const response = await axiosInstance.post("/api/employees/reset-password", {
               token,
               email,
               newPassword: resetPasswordData.newPassword,
