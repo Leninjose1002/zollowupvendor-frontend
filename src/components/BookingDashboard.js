@@ -171,8 +171,8 @@ const BookingsDashboard = () => {
                       {booking.name || booking.email || "Unknown Customer"}
                     </h3>
                     <p className="service-name">
-                      {booking.serviceType.toUpperCase()}
-                    </p>
+  {booking.serviceType?.toUpperCase() || "Unknown Service"}
+</p>
                   </div>
                 </div>
 
@@ -181,7 +181,7 @@ const BookingsDashboard = () => {
                     className="status-badge"
                     style={{ backgroundColor: getStatusColor(booking.status) }}
                   >
-                    {booking.status.toUpperCase()}
+                    {booking.status?.toUpperCase() || "UNKNOWN"}
                   </span>
                   <span className="expand-icon">
                     {expandedBooking === booking._id ? "▼" : "▶"}
