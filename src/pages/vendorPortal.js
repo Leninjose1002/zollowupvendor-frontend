@@ -15,6 +15,7 @@ const VendorPortal = () => {
     phone: "",
     sourcing_person_name: "",      // 🆕 NEW
     skill_category: "",             // 🆕 NEW
+    other_skill_name: "", 
     diet_type: "",                  // 🆕 NEW
   });
   const [verificationData, setVerificationData] = useState({
@@ -101,18 +102,33 @@ const VendorPortal = () => {
     setError("");
     setSuccess("");
 
-    if (!formData.email || !formData.password || !formData.businessName || !formData.phone || !formData.skill_category) {
-      setError("All fields are required");
-      setLoading(false);
-      return;
-    }
-    
-    // 🆕 Validate diet_type for Cook/Chef
-  if (formData.skill_category === 'Cook/Chef' && !formData.diet_type) {
-    setError("Diet type is required for chefs");
-    setLoading(false);
-    return;
-  }
+   // ✅ Check critical fields only (email & businessName are optional)
+if (!formData.password || !formData.phone || !formData.skill_category) {
+  setError("Phone, Skill Category, and Password are required");
+  setLoading(false);
+  return;
+}
+
+// ✅ Validate that either email or phone is provided
+if (!formData.email && !formData.phone) {
+  setError("Please provide either an email or phone number");
+  setLoading(false);
+  return;
+}
+
+// ✅ Validate diet_type for Cook/Chef
+if (formData.skill_category === 'Cook/Chef' && !formData.diet_type) {
+  setError("Diet type is required for chefs");
+  setLoading(false);
+  return;
+}
+
+// ✅ Validate other_skill_name when "Other" is selected
+if (formData.skill_category === 'Other' && !formData.other_skill_name) {
+  setError("Please specify your skill category");
+  setLoading(false);
+  return;
+}
 
     try {
       const response = await axiosInstance.post("/api/employees/register", {
@@ -122,15 +138,15 @@ const VendorPortal = () => {
         name: formData.name || formData.businessName,
         phone: formData.phone,
          sourcing_person_name: formData.sourcing_person_name,  // 🆕 NEW
-      skill_category: formData.skill_category,              // 🆕 NEW
+      skill_category: formData.skill_category === 'Other' ? formData.other_skill_name : formData.skill_category,  // 👈 SENDS CUSTOM NAME
       diet_type: formData.diet_type,                        // 🆕 NEW
       });
 
       setSuccess(response.data.message);
       setVerificationData({ email: formData.email, phone: formData.phone, token: "", verificationMethod: "" });
       setCurrentPage("choose-verification");
-      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
-  skill_category: "",         // 🆕 Add this
+      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "", skill_category: "", 
+  other_skill_name: "",
   diet_type: ""  });
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
@@ -243,8 +259,9 @@ const VendorPortal = () => {
       const { token } = response.data;
       localStorage.setItem("vendorToken", token);
       setSuccess("Login successful! Redirecting to dashboard...");
-      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
-  skill_category: "",         // 🆕 Add this
+      setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "", 
+  skill_category: "",  
+  other_skill_name: "",  
   diet_type: ""   });
 
       setTimeout(() => {
@@ -524,14 +541,13 @@ const VendorPortal = () => {
 
             <form onSubmit={handleSignup}>
               <div className="form-group">
-                <label>Business Name (Optional)</label>
+                <label>Business Name <span style={{ fontSize: '12px', color: '#999', fontWeight: 'normal' }}>(optional)</span></label>
                 <input
                   type="text"
                   name="businessName"
                   placeholder="Your business name"
                   value={formData.businessName}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -572,9 +588,34 @@ const VendorPortal = () => {
       <option value="Cook/Chef">Cook/Chef</option>
       <option value="Plumber">Plumber</option>
       <option value="Electrician">Electrician</option>
-      <option value="Other">Other</option>
+      <option value="Driver">Driver</option>
+      <option value="Security">Security</option>
+      <option value="Other">Other (please specify)</option> 
     </select>
   </div>
+
+{/* ✅ CONDITIONAL: Custom Skill Name for "Other" */}
+{formData.skill_category === 'Other' && (
+  <div className="form-group">
+    <label>Please specify your skill <span style={{ color: '#d32f2f' }}>*</span></label>
+    <input
+      type="text"
+      name="other_skill_name"
+      placeholder="e.g., Business Consulting, Video Editing, Photography"
+      value={formData.other_skill_name}
+      onChange={handleInputChange}
+      required={formData.skill_category === 'Other'}
+      style={{
+        width: '100%',
+        padding: '0.75rem',
+        border: '1px solid #e1e8ed',
+        borderRadius: '8px',
+        fontSize: '14px',
+        backgroundColor: '#ffffff',
+      }}
+    />
+  </div>
+)}
 
   {/* 🆕 NEW FIELD: Diet Type (Only for Chef) */}
   {formData.skill_category === 'Cook/Chef' && (
@@ -616,14 +657,13 @@ const VendorPortal = () => {
   </div>
 
               <div className="form-group">
-                <label>Email</label>
+                <label>Email <span style={{ fontSize: '12px', color: '#999', fontWeight: 'normal' }}>(optional)</span></label>
                 <input
                   type="email"
                   name="email"
                   placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -863,7 +903,8 @@ const VendorPortal = () => {
           });
           setSuccess(response.data.message);
           setFormData({ email: "", password: "", businessName: "", name: "", phone: "", sourcing_person_name: "",  // 🆕 Add this
-  skill_category: "",         // 🆕 Add this
+  skill_category: "",  
+  other_skill_name: "",         // 🆕 Add this
   diet_type: ""   });
           setTimeout(() => setCurrentPage("landing"), 3000);
         } catch (err) {
